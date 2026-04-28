@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+{% block title %}Doctor Dashboard — {{ patient.name }} | HealSync AI{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="header-actions">
+        <a href="{{ url_for('all_patients') }}" class="btn btn-outline btn-sm">
+            <i class="fas fa-arrow-left"></i> <span>Patient Registry</span>
+        </a>
+        <div class="action-group">
+            <a href="{{ url_for('export_pdf', visit_id=latest_visit.visit_id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-file-pdf"></i> <span>Export Visit Summary</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Patient Header Card -->
+    <div class="card glass-card patient-hero">
+        <div class="card-body">
+            <div class="hero-left">
+                <div class="avatar-lg">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="hero-info">
+                    <h1 class="patient-name">{{ patient.name }}</h1>
+                    <div class="patient-metrics">
+                        <span class="metric"><strong>AGE:</strong> {{ patient.age or 'N/A' }} yrs</span>
+                        <span class="metric"><strong>ID:</strong> #HS-{{ patient.patient_id }}</span>
+                        <span class="metric"><strong>VISITS:</strong> {{ visit_count }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-right">
+                <div
+                    class="integrity-status glass-panel {{ 'intact' if visits_with_integrity[0].is_intact else 'violated' }}">
+                    <div class="status-indicator"></div>
+                    <div class="status-details">
+                        <span class="status-label">VAULT INTEGRITY</span>
+                        <span class="status-value">{{ 'SECURE (SHA-256)' if visits_with_integrity[0].is_intact else
+                            'TAMPERED / MISMATCH' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Current Visit Details -->
+        <div class="col-main">
+            <div class="card glass-card h-full">
+                <div class="card-header">
+                    <h2 class="card-title text-primary"><i class="fas fa-notes-medical"></i> Clinical Insight
+                        (AI-Generated)
+                    </h2>
+                </div>
+                <div class="card-body">
+
+                    <div class="assessment-section mt-4">
+                        <h4 class="section-title"><i class="fas fa-thermometer-half"></i> Chief Complaints</h4>
+                        <div class="complaint-tags">
+                            {% if latest_visit.symptoms %}
+                            {% for s in latest_visit.symptoms.split(',') %}
+                            <span class="tag">{{ s.strip() }}</span>
+                            {% endfor %}
+                            {% else %}
+                            <span class="tag muted">None reported</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="assessment-section mt-4">
+                        <h4 class="section-title"><i class="fas fa-clock"></i> Reported Duration</h4>
+                        <p class="section-text">{{ latest_visit.duration or 'Not specified' }}</p>
+                    </div>
+
+                    <div class="assessment-section mt-4">
+                        <h4 class="section-title"><i class="fas fa-history"></i> Medical History</h4>
+                        <p class="section-text">{{ latest_visit.medical_history or 'No significant history found.' }}
+                        </p>
+                    </div>
+
+
+                    <div class="assessment-section mt-4">
+                        <h4 class="section-title"><i class="fas fa-pen-field"></i> Clinical Notes & Observations</h4>
+                        <form action="{{ url_for('update_notes', visit_id=latest_visit.visit_id) }}" method="POST">
+                            <textarea name="notes" class="form-control clinical-notes" rows="6"
+                                placeholder="Enter your clinical observations, diagnosis, and prescription here...">{{ latest_visit.notes }}</textarea>
+                            <button type="submit" class="btn btn-primary mt-3">
+                                <i class="fas fa-save"></i> <span>Save Observations</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History & Sidebar -->
+        <div class="col-side">
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-history"></i> Visit Timeline</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="timeline">
+                        {% for item in visits_with_integrity %}
+                        <div class="timeline-item {{ 'active' if loop.first else '' }}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <span class="timeline-date">{{ item.visit.date.strftime('%d %b %Y | %H:%M') }}</span>
+                                <h4 class="timeline-title">Consultation Session</h4>
+                                <div class="timeline-meta">
+                                    <span class="integrity-mini {{ 'ok' if item.is_intact else 'bad' }}">
+                                        <i
+                                            class="fas {{ 'fa-shield-check' if item.is_intact else 'fa-triangle-exclamation' }}"></i>
+                                    </span>
+                                    <span
+                                        class="payment-mini {{ 'paid' if item.payment.status == 'Paid' else 'pending' }}">
+                                        {{ item.payment.status }}
+                                    </span>
+                                    <a href="{{ url_for('visit_detail', visit_id=item.visit.visit_id) }}"
+                                        class="view-link">Details <i class="fas fa-chevron-right"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card glass-card recommendation-box mt-4">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-hospital-alt"></i> Smart Referral</h3>
+                </div>
+                <div class="card-body">
+                    <p class="vault-info">ML-based suggestion based on severity and symptoms.</p>
+                    <div id="referralResult" class="referral-display" style="display: none;">
+                        <div class="referral-badge">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span id="hospitalName">--</span>
+                        </div>
+                    </div>
+                    <button id="getReferralBtn" class="btn btn-outline btn-sm w-full mt-3">
+                        <i class="fas fa-robot"></i> <span>Generate Suggestion</span>
+                    </button>
+                    <div id="referralError" class="error-msg mt-2"
+                        style="display: none; color: var(--danger); font-size: 0.75rem;"></div>
+                </div>
+            </div>
+
+            <div class="card glass-card integrity-vault">
+                <div class="card-body">
+                    <div class="vault-label">
+                        <i class="fas fa-key"></i>
+                        <span>SHA-256 DIGITAL SIGNATURE</span>
+                    </div>
+                    <code class="hash-code">{{ latest_visit.visit_hash[:32] }}...</code>
+                    <p class="vault-info">This signature is re-verified every time the record is opened to ensure data
+                        hasn't been modified in the database.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .patient-hero .card-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2.5rem;
+    }
+
+    .hero-left {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .avatar-lg {
+        font-size: 5rem;
+        color: var(--primary);
+        line-height: 1;
+        opacity: 0.8;
+    }
+
+    .patient-name {
+        font-size: 2.5rem;
+        line-height: 1;
+        margin-bottom: 0.75rem;
+        color: white;
+    }
+
+    .patient-metrics {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .metric {
+        opacity: 0.7;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+    }
+
+    .integrity-status {
+        padding: 1.25rem 2rem;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        border: 1px solid var(--border-light);
+    }
+
+    .integrity-status.intact {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .integrity-status.violated {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.2);
+        animation: shake 0.5s;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        box-shadow: 0 0 10px currentColor;
+    }
+
+    .intact .status-indicator {
+        background: var(--accent);
+        color: var(--accent);
+    }
+
+    .violated .status-indicator {
+        background: var(--danger);
+        color: var(--danger);
+    }
+
+    .status-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .status-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        letter-spacing: 1px;
+    }
+
+    .status-value {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: white;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .section-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--secondary);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-transform: uppercase;
+    }
+
+    .complaint-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .tag {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        border: 1px solid var(--border-dim);
+    }
+
+    .tag.muted {
+        color: var(--text-muted);
+        border-style: dashed;
+    }
+
+    .section-text {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1rem;
+        border-radius: 12px;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-dim);
+    }
+
+    .clinical-notes {
+        background: rgba(0, 0, 0, 0.3);
+        border-color: var(--border-light);
+        line-height: 1.6;
+    }
+
+    .clinical-summary-box {
+        background: rgba(79, 70, 229, 0.1);
+        border: 1px solid var(--primary);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    .clinical-summary-text {
+        background: none !important;
+        border: none !important;
+        padding: 0 !important;
+        color: var(--text-primary) !important;
+        font-size: 1.05rem !important;
+        font-weight: 500;
+    }
+
+    .timeline {
+        padding: 1rem 0;
+    }
+
+    .timeline-item {
+        padding: 1.5rem 2.5rem;
+        border-left: 2px solid var(--border-light);
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .timeline-item:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .timeline-item.active {
+        border-left-color: var(--primary);
+        background: rgba(79, 70, 229, 0.05);
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -7px;
+        top: 1.75rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--bg-dark);
+        border: 2px solid var(--border-light);
+    }
+
+    .active .timeline-marker {
+        border-color: var(--primary);
+        background: var(--primary);
+        box-shadow: 0 0 10px var(--primary);
+    }
+
+    .timeline-date {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--text-muted);
+    }
+
+    .timeline-title {
+        font-size: 1rem;
+        margin: 0.25rem 0;
+        color: white;
+    }
+
+    .timeline-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .integrity-mini.ok {
+        color: var(--accent);
+    }
+
+    .integrity-mini.bad {
+        color: var(--danger);
+    }
+
+    .payment-mini {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 0.1rem 0.5rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+
+    .payment-mini.paid {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--accent);
+    }
+
+    .payment-mini.pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--warning);
+    }
+
+    .view-link {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--secondary);
+        margin-left: auto;
+    }
+
+    .integrity-vault {
+        background: rgba(0, 0, 0, 0.3);
+        border-style: dashed;
+        border-color: var(--primary);
+    }
+
+    .vault-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--primary);
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+    }
+
+    .hash-code {
+        display: block;
+        background: black;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .vault-info {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 0.75rem;
+        line-height: 1.4;
+    }
+
+    .referral-display {
+        background: rgba(14, 165, 233, 0.1);
+        border: 1px solid var(--secondary);
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-top: 0.75rem;
+        animation: fadeIn 0.5s;
+    }
+
+    .referral-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--secondary);
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .w-full {
+        width: 100%;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 992px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-left {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .hero-right {
+            margin-top: 2rem;
+        }
+    }
+</style>
+
+<script>
+    document.getElementById('getReferralBtn').addEventListener('click', async function () {
+        const btn = this;
+        const resultDiv = document.getElementById('referralResult');
+        const hospitalSpan = document.getElementById('hospitalName');
+        const errorDiv = document.getElementById('referralError');
+
+        // UI Feedback
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+        errorDiv.style.display = 'none';
+
+        try {
+            const response = await fetch("{{ url_for('recommend_hospital', visit_id=latest_visit.visit_id) }}");
+            const data = await response.json();
+
+            if (data.success) {
+                hospitalSpan.textContent = data.recommended_hospital;
+                resultDiv.style.display = 'block';
+                btn.innerHTML = '<i class="fas fa-check"></i> Refined';
+            } else {
+                errorDiv.textContent = data.message || data.error;
+                errorDiv.style.display = 'block';
+                btn.innerHTML = '<i class="fas fa-robot"></i> Retry Suggestion';
+                btn.disabled = false;
+            }
+        } catch (err) {
+            errorDiv.textContent = "Connection error. Please try again.";
+            errorDiv.style.display = 'block';
+            btn.innerHTML = '<i class="fas fa-robot"></i> Retry Suggestion';
+            btn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

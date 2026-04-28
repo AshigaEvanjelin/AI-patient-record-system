@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Login — HealSync AI{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title"><i class="fas fa-lock-keyhole"></i> Staff Access</h2>
+                <p class="card-subtitle">Authorize clinical session</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user-shield"></i>
+                        <input type="text" name="username" class="form-control" placeholder="staff_id" required
+                            autofocus>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password Credential</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-key"></i>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">
+                    <span>Authenticate</span>
+                    <i class="fas fa-sign-in-alt"></i>
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>Internal medical system. <a href="{{ url_for('register') }}">Request Account</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        pointer-events: none;
+    }
+
+    .input-with-icon .form-control {
+        padding-left: 2.75rem;
+    }
+</style>
+{% endblock %}

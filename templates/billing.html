@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+{% block title %}Billing & Confirmation — HealSync AI{% endblock %}
+
+{% block content %}
+<div class="billing-container">
+    <div class="layout-grid">
+        <!-- Patient Summary Card -->
+        <div class="col-main">
+            <div class="card glass-card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title text-primary"><i class="fas fa-id-card"></i> Patient Record Summary</h2>
+                        <p class="card-subtitle">Verify details before final secure vault encryption</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="label">Patient Name</span>
+                            <span class="value">{{ draft.name }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Age</span>
+                            <span class="value">{{ draft.age or 'N/A' }} yrs</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Phone Contact</span>
+                            <span class="value">{{ draft.phone or 'N/A' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="clinical-details mt-4">
+                        <div class="detail-block">
+                            <h4 class="detail-title"><i class="fas fa-notes-medical"></i> Extracted Symptoms</h4>
+                            <p class="detail-text">{{ draft.symptoms or 'No symptoms detected.' }}</p>
+                        </div>
+                        <div class="detail-block mt-3">
+                            <h4 class="detail-title"><i class="fas fa-clock"></i> Duration</h4>
+                            <p class="detail-text">{{ draft.duration or 'Not specified.' }}</p>
+                        </div>
+                        <div class="detail-block mt-3">
+                            <h4 class="detail-title"><i class="fas fa-history"></i> Medical History</h4>
+                            <p class="detail-text">{{ draft.medical_history or 'None reported.' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="transcript-preview mt-4">
+                        <h4 class="detail-title"><i class="fas fa-quote-left"></i> Verified Transcript</h4>
+                        <div class="transcript-box-sm">
+                            {{ draft.transcript }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Previous History Section -->
+            {% if previous_visits %}
+            <div class="card glass-card mt-4">
+                <div class="card-header">
+                    <h3 class="card-title text-accent"><i class="fas fa-history"></i> Previous Medical History</h3>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-sm">
+                        {% for visit in previous_visits[:3] %}
+                        <div class="history-item">
+                            <div class="history-meta">
+                                <span class="history-date">{{ visit.date.strftime('%d %b %Y') }}</span>
+                                <span class="history-id">#HS-{{ visit.visit_id }}</span>
+                            </div>
+                            <div class="history-content">
+                                <p><strong>Symptoms:</strong> {{ visit.symptoms or 'N/A' }}</p>
+                                {% if visit.notes %}
+                                <p class="history-notes"><strong>Doctor Notes:</strong> {{ visit.notes }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if previous_visits|length > 3 %}
+                    <p class="text-muted small mt-2">+ {{ previous_visits|length - 3 }} more previous visits recorded
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Billing & Security Card -->
+        <div class="col-side">
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-credit-card"></i> Billing Initialization</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="form-group">
+                            <label class="form-label">Consultation Fee (INR)</label>
+                            <div class="fee-badge">
+                                <span class="currency">₹</span>
+                                <input type="number" name="amount" value="500" class="fee-input">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Internal Billing Status</label>
+                            <div class="status-selector">
+                                <label class="status-option">
+                                    <input type="radio" name="payment_status" value="Not Paid" checked>
+                                    <div class="status-box pending">
+                                        <i class="fas fa-hourglass-half"></i>
+                                        <span>PENDING</span>
+                                    </div>
+                                </label>
+                                <label class="status-option">
+                                    <input type="radio" name="payment_status" value="Paid">
+                                    <div class="status-box success">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>CONFIRMED</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Nursing Notes (Internal Only)</label>
+                            <textarea name="notes" class="form-control"
+                                placeholder="Add administrative notes..."></textarea>
+                        </div>
+
+                        <div class="security-shroud mt-4">
+                            <div class="shroud-label">
+                                <i class="fas fa-fingerprint"></i>
+                                <span>Record will be hashed via SHA-256 upon submission</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-full mt-4">
+                            <span>Finalize & Secure Record</span>
+                            <i class="fas fa-shield-check"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .layout-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 2rem;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1.5rem;
+        border-radius: 12px;
+    }
+
+    .summary-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .summary-item .label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .summary-item .value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .detail-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--secondary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .detail-text {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0.75rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-dim);
+    }
+
+    .transcript-box-sm {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        font-style: italic;
+        max-height: 100px;
+        overflow-y: auto;
+        background: rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        border-radius: 8px;
+        line-height: 1.4;
+        border-left: 3px solid var(--primary);
+    }
+
+    .fee-badge {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1.5rem;
+        border: 1px solid var(--border-dim);
+    }
+
+    .fee-badge .currency {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--accent);
+        margin-right: 0.5rem;
+    }
+
+    .fee-input {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: white;
+        width: 100px;
+    }
+
+    .status-selector {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .status-option {
+        flex: 1;
+        cursor: pointer;
+    }
+
+    .status-option input {
+        display: none;
+    }
+
+    .status-box {
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-dim);
+        background: rgba(255, 255, 255, 0.03);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .status-box i {
+        font-size: 1.25rem;
+    }
+
+    .status-box span {
+        font-size: 0.7rem;
+        font-weight: 800;
+    }
+
+    .status-option input:checked+.status-box.pending {
+        border-color: var(--warning);
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+    }
+
+    .status-option input:checked+.status-box.success {
+        border-color: var(--accent);
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--accent);
+    }
+
+    .security-shroud {
+        background: rgba(79, 70, 229, 0.05);
+        padding: 1rem;
+        border-radius: 10px;
+        border: 1px dashed var(--primary);
+    }
+
+    .shroud-label {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .shroud-label i {
+        font-size: 1rem;
+        color: var(--primary);
+    }
+
+    /* History Timeline Styles */
+    .timeline-sm {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .history-item {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        padding: 1rem;
+        border-left: 3px solid var(--accent);
+        transition: transform 0.2s ease;
+    }
+
+    .history-item:hover {
+        transform: translateX(5px);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .history-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .history-date {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    .history-id {
+        font-size: 0.7rem;
+        font-family: monospace;
+        color: var(--accent);
+        background: rgba(16, 185, 129, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .history-content p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .history-notes {
+        margin-top: 0.5rem !important;
+        font-style: italic;
+        color: var(--text-muted) !important;
+        background: rgba(0, 0, 0, 0.1);
+        padding: 0.5rem;
+        border-radius: 6px;
+    }
+
+    @media (max-width: 992px) {
+        .layout-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

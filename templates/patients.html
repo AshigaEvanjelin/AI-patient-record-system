@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %}Patient Registry — HealSync AI{% endblock %}
+
+{% block content %}
+<div class="patients-registry">
+    <div class="header-flex">
+        <div class="title-group">
+            <h1 class="page-title"><i class="fas fa-users-medical"></i> Patient Registry</h1>
+            <p class="page-subtitle">Centralized medical record management vault</p>
+        </div>
+        <div class="stats-group">
+            <div class="mini-stat glass-panel">
+                <span class="stat-val">{{ patient_data|length }}</span>
+                <span class="stat-lbl">Active Files</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card glass-card mt-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>IDENTIFIER</th>
+                            <th>PATIENT NAME</th>
+                            <th>LATEST VISIT</th>
+                            <th>BILLING STATUS</th>
+                            <th>VISIT COUNT</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if patient_data %}
+                        {% for item in patient_data %}
+                        <tr>
+                            <td>
+                                <span class="id-tag">HS-{{ item.patient.patient_id }}</span>
+                            </td>
+                            <td>
+                                <div class="patient-cell">
+                                    <span class="p-name">{{ item.patient.name }}</span>
+                                    <span class="p-contact">{{ item.patient.phone or 'No phone' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.latest_visit %}
+                                <div class="visit-cell">
+                                    <span class="v-date">{{ item.latest_visit.date.strftime('%d %b %Y') }}</span>
+                                    <span class="v-time">{{ item.latest_visit.date.strftime('%H:%M') }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">No records</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.latest_payment %}
+                                <span
+                                    class="status-pill {{ 'status-paid' if item.latest_payment.status == 'Paid' else 'status-pending' }}">
+                                    {{ item.latest_payment.status }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="visit-count">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>{{ item.visit_count }} Sessions</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    {% if current_user.role == 'Doctor' %}
+                                    <a href="{{ url_for('doctor_dashboard', patient_id=item.patient.patient_id) }}"
+                                        class="btn btn-primary btn-sm btn-icon">
+                                        <i class="fas fa-chart-user"></i>
+                                        <span>Dashboard</span>
+                                    </a>
+                                    {% else %}
+                                    <span class="badge badge-outline">Doctor Only</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="fas fa-folder-open"></i>
+                                <p>No patient records found in the registry.</p>
+                                <a href="{{ url_for('index') }}" class="btn btn-outline btn-sm mt-3">Start New
+                                    Intake</a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        color: white;
+        margin-bottom: 0.25rem;
+    }
+
+    .page-subtitle {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+    }
+
+    .mini-stat {
+        padding: 0.5rem 1.5rem;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border: 1px solid var(--border-light);
+    }
+
+    .stat-val {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--secondary);
+        line-height: 1.2;
+    }
+
+    .stat-lbl {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    .premium-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .premium-table th {
+        padding: 1.25rem 1.5rem;
+        text-align: left;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .premium-table td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-dim);
+        vertical-align: middle;
+    }
+
+    .premium-table tr:hover {
+        background: rgba(255, 255, 255, 0.01);
+    }
+
+    .id-tag {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-dim);
+    }
+
+    .patient-cell {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .p-name {
+        font-weight: 600;
+        color: white;
+        font-size: 1rem;
+    }
+
+    .p-contact {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .visit-cell {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .v-date {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+    }
+
+    .v-time {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .visit-count {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .visit-count i {
+        color: var(--primary);
+    }
+
+    .empty-state {
+        padding: 5rem 0 !important;
+        text-align: center;
+        color: var(--text-muted);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.3;
+    }
+
+    .btn-icon {
+        gap: 0.5rem;
+    }
+
+    .badge-outline {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        border: 1px solid var(--border-light);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}

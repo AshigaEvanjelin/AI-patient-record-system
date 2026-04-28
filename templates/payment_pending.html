@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Access Restricted — HealSync AI{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card card glass-card">
+        <div class="card-header text-center">
+            <div class="warning-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h2 class="card-title mt-3">Access Restricted</h2>
+            <p class="card-subtitle">Financial clearance required for medical record release</p>
+        </div>
+        <div class="card-body">
+            <div class="pending-notice">
+                <p>The patient record for <strong>{{ patient.name }}</strong> has been securely hashed and stored in the
+                    vault, but it remains <strong>Locked</strong> due to pending consultation fees.</p>
+            </div>
+
+            <div class="billing-details mt-4">
+                <div class="detail-row">
+                    <span>Consultation Fee</span>
+                    <span class="text-white">₹500.00</span>
+                </div>
+                <div class="divider-sm"></div>
+                <div class="detail-row total">
+                    <span>Outstanding Balance</span>
+                    <span class="text-accent">₹500.00</span>
+                </div>
+            </div>
+
+            <div class="action-path mt-4">
+                <div class="nurse-path">
+                    <p class="path-label"><i class="fas fa-user-nurse"></i> FOR NURSES</p>
+                    <a href="{{ url_for('billing') }}" class="btn btn-outline btn-full btn-sm">Review Billing Status</a>
+                </div>
+                <div class="doctor-path mt-3">
+                    <p class="path-label"><i class="fas fa-user-md"></i> FOR DOCTORS</p>
+                    <p class="path-note">Contact the nursing staff to verify payment status before access can be
+                        granted.</p>
+                </div>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-full mt-4">
+                <i class="fas fa-home"></i> <span>Return to Intake</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .warning-icon {
+        font-size: 3rem;
+        color: var(--warning);
+        opacity: 0.8;
+    }
+
+    .pending-notice {
+        background: rgba(245, 158, 11, 0.05);
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    .billing-details {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+
+    .total {
+        font-size: 1.1rem;
+        border-top: 1px solid var(--border-dim);
+        padding-top: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    .text-accent {
+        color: var(--secondary) !important;
+        font-weight: 800;
+    }
+
+    .path-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+    }
+
+    .path-note {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        background: rgba(0, 0, 0, 0.1);
+        padding: 0.75rem;
+        border-radius: 8px;
+        border-left: 3px solid var(--border-dim);
+    }
+</style>
+{% endblock %}

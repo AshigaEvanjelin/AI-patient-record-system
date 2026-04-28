@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Register — HealSync AI{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title"><i class="fas fa-user-plus"></i> Staff Enrollment</h2>
+                <p class="card-subtitle">Create internal medical credentials</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-id-badge"></i>
+                        <input type="text" name="username" class="form-control" placeholder="staff_id" required
+                            autofocus>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role Definition</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-stethoscope"></i>
+                        <select name="role" class="form-control" required style="padding-left: 2.75rem;">
+                            <option value="Nurse">HEALSYNC NURSE</option>
+                            <option value="Doctor">HEALSYNC DOCTOR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Secure Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-key-skeleton"></i>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">
+                    <span>Initialize Account</span>
+                    <i class="fas fa-check-double"></i>
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>Already authorized? <a href="{{ url_for('login') }}">Member Login</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        pointer-events: none;
+        z-index: 5;
+    }
+
+    .input-with-icon .form-control {
+        padding-left: 2.75rem;
+    }
+
+    select.form-control {
+        appearance: none;
+        -webkit-appearance: none;
+    }
+</style>
+{% endblock %}

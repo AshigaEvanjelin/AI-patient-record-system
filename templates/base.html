@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Patient Record System{% endblock %}</title>
+
+    <!-- Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons & Styling -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="theme-premium">
+    <!-- Animated background mesh -->
+    <div class="bg-mesh"></div>
+    <div class="bg-overlay"></div>
+
+    <nav class="glass-navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="nav-brand">
+                <div class="brand-logo">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-main">HEAL<span class="highlight">SYNC</span></span>
+                    <span class="brand-sub">AI MEDICAL ENGINE</span>
+                </div>
+            </a>
+
+            <div class="nav-links">
+                {% if current_user.is_authenticated %}
+                {% if current_user.role == 'Nurse' %}
+                <a href="{{ url_for('index') }}" class="nav-link {{ 'active' if request.endpoint == 'index' }}">
+                    <i class="fas fa-microphone"></i> <span>Intake</span>
+                </a>
+                <a href="{{ url_for('billing') }}" class="nav-link {{ 'active' if request.endpoint == 'billing' }}">
+                    <i class="fas fa-credit-card"></i> <span>Billing</span>
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('all_patients') }}"
+                    class="nav-link {{ 'active' if request.endpoint == 'all_patients' }}">
+                    <i class="fas fa-users"></i> <span>Patients</span>
+                </a>
+
+                <div class="nav-divider"></div>
+
+                <div class="nav-user">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="u-name">{{ current_user.username }}</span>
+                        <span class="u-role">{{ current_user.role }}</span>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="btn-logout" title="Logout">
+                        <i class="fas fa-power-off"></i>
+                    </a>
+                </div>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="nav-link">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Join Staff</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="flash-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                <i class="fas {{ 'fa-check-circle' if category == 'success' else 'fa-exclamation-circle' }}"></i>
+                <span class="alert-message">{{ message }}</span>
+                <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="glass-footer">
+        <div class="footer-content">
+            <p>&copy; 2024 HealSync AI Medical Engine. Secure SHA-256 Vault Architecture.</p>
+            <div class="footer-badges">
+                <span class="f-badge"><i class="fas fa-shield-halved"></i> HIPAA Compliant</span>
+                <span class="f-badge"><i class="fas fa-lock"></i> Encrypted</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}Visit Detail — {{ patient.name }} | HealSync AI{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+    <div class="header-actions">
+        <a href="{{ url_for('doctor_dashboard', patient_id=patient.patient_id) }}" class="btn btn-outline btn-sm">
+            <i class="fas fa-arrow-left"></i> <span>Back to Dashboard</span>
+        </a>
+        <div class="action-group" style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('export_pdf', visit_id=visit.visit_id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-file-pdf"></i> <span>Export PDF</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="layout-grid">
+        <div class="col-main">
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-file-medical-alt"></i> Clinical Encounter Data</h2>
+                    <p class="card-subtitle">Authenticated Record: {{ visit.date.strftime('%B %d, %Y | %H:%M') }}</p>
+                </div>
+                <div class="card-body">
+                    <div class="clinical-viewer">
+                        <div class="viewer-section">
+                            <span class="v-label">Detected Symptoms</span>
+                            <p class="v-content">{{ visit.symptoms or 'None' }}</p>
+                        </div>
+                        <div class="viewer-section mt-4">
+                            <span class="v-label">Patient History</span>
+                            <p class="v-content">{{ visit.medical_history or 'None' }}</p>
+                        </div>
+                        <div class="viewer-section mt-4">
+                            <span class="v-label">Observation Transcript</span>
+                            <div class="transcript-scroll">
+                                {{ visit.transcript }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="doctor-notes-section mt-5">
+                        <h3 class="notes-title"><i class="fas fa-user-md"></i> Physician Observations</h3>
+                        <form action="{{ url_for('update_notes', visit_id=visit.visit_id) }}" method="POST">
+                            <textarea name="notes" class="form-control" rows="8"
+                                placeholder="Diagnosis, prescriptions, and follow-up plan...">{{ visit.notes }}</textarea>
+                            <button type="submit" class="btn btn-primary mt-3">
+                                <i class="fas fa-save"></i> <span>Update Clinical Record</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-side">
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-shield-check"></i> Vault Security</h3>
+                </div>
+                <div class="card-body">
+                    <div class="integrity-panel {{ 'ok' if is_intact else 'violated' }}">
+                        <i class="fas {{ 'fa-shield-check' if is_intact else 'fa-radiation' }}"></i>
+                        <span class="panel-status">{{ 'RECORD INTACT' if is_intact else 'TAMPER ALERT' }}</span>
+                    </div>
+
+                    <div class="vault-meta mt-4">
+                        <span class="meta-label">SHA-256 SIGNATURE</span>
+                        <code class="meta-hash">{{ visit.visit_hash[:24] }}...</code>
+                    </div>
+
+                    <div class="billing-status-card mt-4">
+                        <span class="meta-label">BILLING STATUS</span>
+                        <div class="status-badge-lg {{ 'paid' if payment.status == 'Paid' else 'pending' }}">
+                            {{ payment.status }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-history"></i> Contextual History</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="mini-timeline">
+                        {% for v in previous_visits %}
+                        <a href="{{ url_for('visit_detail', visit_id=v.visit_id) }}" class="timeline-link">
+                            <span class="t-date">{{ v.date.strftime('%b %d, %Y') }}</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                        {% else %}
+                        <p class="p-3 text-center text-muted">No previous history</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .layout-grid {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 2rem;
+    }
+
+    .v-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .v-content {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-dim);
+        color: var(--text-secondary);
+    }
+
+    .transcript-scroll {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 1.5rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        font-style: italic;
+        border-left: 4px solid var(--primary);
+        max-height: 200px;
+        overflow-y: auto;
+        line-height: 1.6;
+    }
+
+    .notes-title {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .integrity-panel {
+        padding: 1.5rem;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        border: 1px solid var(--border-light);
+    }
+
+    .integrity-panel.ok {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--accent);
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .integrity-panel.violated {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+        border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .integrity-panel i {
+        font-size: 2.5rem;
+    }
+
+    .panel-status {
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
+
+    .meta-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .meta-hash {
+        background: black;
+        padding: 0.5rem;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 0.75rem;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .status-badge-lg {
+        padding: 1rem;
+        border-radius: 12px;
+        text-align: center;
+        font-weight: 800;
+        font-size: 1.25rem;
+        letter-spacing: 1px;
+    }
+
+    .status-badge-lg.paid {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--accent);
+    }
+
+    .status-badge-lg.pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--warning);
+    }
+
+    .timeline-link {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-dim);
+        color: var(--text-secondary);
+        transition: all 0.3s ease;
+    }
+
+    .timeline-link:hover {
+        background: rgba(255, 255, 255, 0.02);
+        color: white;
+    }
+
+    .t-date {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 992px) {
+        .layout-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

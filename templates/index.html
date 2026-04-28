@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Patient Intake — HealSync AI{% endblock %}
+
+{% block content %}
+<div class="intake-container">
+    <div class="layout-grid">
+        <!-- Recording & Transcription Section -->
+        <div class="col-main">
+            <div class="card glass-card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title"><i class="fas fa-wave-square"></i> Clinical Transcription</h2>
+                        <p class="card-subtitle">Speak naturally to capture patient details</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="transcriptionStatus"></div>
+
+                    <div class="recording-zone">
+                        <div class="record-btn-container">
+                            <button id="recordBtn" class="btn-record" title="Toggle Recording">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <div class="pulse-ring"></div>
+                        </div>
+                        <p id="recordNote" class="record-note">Click to start recording</p>
+
+                        <div class="mic-tip glass-panel">
+                            <i class="fas fa-lightbulb"></i>
+                            <span><strong>Tip:</strong> Say things like <em>"Patient is John, 34 years old, complaining
+                                    of headache for 2 days"</em></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><i class="fas fa-align-left"></i> Live Transcript Preview</label>
+                        <textarea id="transcriptArea" class="form-control" rows="8"
+                            placeholder="Transcription will appear here as you speak..." readonly></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="aiPreview" class="card glass-card hidden">
+                <div class="card-header">
+                    <h3 class="card-title text-accent"><i class="fas fa-sparkles"></i> AI Insight Preview</h3>
+                </div>
+                <div id="aiPreviewContent" class="card-body">
+                    <!-- Data preview injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Confirmation Form -->
+        <div class="col-side">
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-file-medical"></i> Clinical Data</h2>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('record') }}" method="POST" id="intakeForm">
+                        <input type="hidden" name="manual_transcript" id="manualTranscriptHidden">
+
+                        <div class="form-group">
+                            <label class="form-label">Patient Name</label>
+                            <div class="input-with-icon">
+                                <input type="text" name="patient_name" id="patientNameField" class="form-control"
+                                    placeholder="Extracted Name">
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="display: flex; gap: 1rem;">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label">Age</label>
+                                <input type="number" name="patient_age" id="patientAgeField" class="form-control"
+                                    placeholder="Age">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label class="form-label">Phone</label>
+                                <input type="text" name="patient_phone" id="patientPhoneField" class="form-control"
+                                    placeholder="Phone">
+                            </div>
+                        </div>
+
+                        <div class="form-actions" style="margin-top: 2rem;">
+                            <button type="submit" class="btn btn-primary btn-full">
+                                <span>Proceed to Billing</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card glass-card mini-card">
+                <div class="card-body">
+                    <div class="secure-label">
+                        <i class="fas fa-shield-check"></i>
+                        <span>SHA-256 Vault Generation Enabled</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .layout-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 2rem;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .text-accent {
+        color: var(--accent);
+    }
+
+    .mini-card {
+        border-style: dashed;
+        opacity: 0.8;
+    }
+
+    .secure-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    @media (max-width: 992px) {
+        .layout-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
